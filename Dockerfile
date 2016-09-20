@@ -5,6 +5,7 @@ MAINTAINER Wilbert van de Ridder wilbert.ridder+drig7@gmail.com
 RUN apt-get update && apt-get install -y \
     build-essential tree curl python-rosdep python-rosinstall-generator python-wstool python-rosinstall wget \
     && apt-get remove -y gazebo2 \
+    && rm /etc/ros/rosdep/sources.list.d/20-default.list \
     && rosdep init && rosdep update \
     # Install gazebo 7
     && curl -ssL http://get.gazebosim.org | sh \
