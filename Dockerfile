@@ -30,24 +30,6 @@ RUN apt-get install -y\
   libxcb-render-util0 libxcb-util0 libxcb-xkb1 libxkbcommon-x11-0\
   libxkbcommon0
 
-# install ros and gazebo packages
-RUN apt-get update && apt-get install -y \
-    build-essential tree curl python-rosdep python-rosinstall-generator python-wstool python-rosinstall wget \
-    && apt-get remove -y gazebo2 \
-    && rm /etc/ros/rosdep/sources.list.d/20-default.list \
-    && rosdep init && rosdep update \
-    # Install gazebo 7
-    && curl -ssL http://get.gazebosim.org | sh \
-    # Install gazebo-ros packages
-    && apt-get install -y ros-indigo-gazebo7-ros-pkgs ros-indigo-gazebo7-ros-control \
-    && wget https://raw.githubusercontent.com/osrf/osrf-rosdep/master/gazebo7/00-gazebo7.list -O /etc/ros/rosdep/sources.list.d/00-gazebo7.list \
-    && rosdep update \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Additional development tools
-RUN apt-get install -y x11-apps python-pip build-essential
-RUN pip install catkin_tools
-
 # Make SSH available
 EXPOSE 22
 
@@ -61,8 +43,35 @@ RUN \
   echo "${user} ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/${user}" && \
   chmod 0440 "/etc/sudoers.d/${user}"
 
+# install ros and gazebo packages
+RUN apt-get update && apt-get install -y \
+    build-essential tree curl python-rosdep python-rosinstall-generator python-wstool python-rosinstall wget \
+    && apt-get remove -y gazebo2 \
+    && rm /etc/ros/rosdep/sources.list.d/20-default.list
+
+# Additional development tools
+RUN apt-get install -y x11-apps python-pip build-essential
+RUN pip install catkin_tools
+
+# Install gazebo-ros packages
+RUN sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list' \
+    && wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add - \\
+    && apt-get update && apt-get install -y ros-indigo-gazebo7-ros-pkgs ros-indigo-gazebo7-ros-control
+
+# Install additional ros packages
+RUN apt-get update && apt-get install -y ros-indigo-control-msgs ros-indigo-forward-command-controller
+
+# Install Ruby dependencies
+RUN apt-get install git-core curl zlib1g-dev build-essential libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev python-software-properties libffi-dev
+
+# TODO: Install ruby itself. 
+
+# Cleanup
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Switch to user
 USER "${user}"
+
 # This is required for sharing Xauthority
 ENV QT_X11_NO_MITSHM=1
 ENV CATKIN_TOPLEVEL_WS="${workspace}/devel"
